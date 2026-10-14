@@ -8,7 +8,13 @@
 <style>
   :root{ --ink:#211935; --muted:#716C8C; --bg:#FAF8FF; --surface:#fff; --hair:#ECE7F7; --accent:#FFA726; }
   *{box-sizing:border-box;}
-  body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+  body{margin:0;   background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;display:flex; flex-direction:column;align-items: center; padding-top:2rem; min-height: 100vh;
+    background-color: var(--bg);
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(168, 188, 155, 0.55) 0%, transparent 55%),
+      radial-gradient(circle at 85% 85%, rgba(124, 92, 252, 0.40) 0%, transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(232, 200, 114, 0.35) 0%, transparent 60%);
+    background-attachment: fixed;}
   .wrap{max-width:420px; width:100%; padding:2rem;}
   .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
   .progress span{color:var(--accent);}
