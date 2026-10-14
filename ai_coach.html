@@ -324,6 +324,7 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
   for(const k of keys){ await deleteEntry(k); }
   
   // 🔑 ADD THIS LINE: This clears the daily submission lock so you can test again!
+  localStorage.removeItem('studysoothe_name');
   localStorage.removeItem('studysoothe_last_completed');
 
   document.getElementById('aiResult').innerHTML = '';
