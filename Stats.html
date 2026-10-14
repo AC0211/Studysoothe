@@ -1,0 +1,353 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget: Trends + Insights Module</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#FAF8FF; --surface:#fff; --ink:#211935; --muted:#716C8C; --hair:#ECE7F7;
+    --stress:#FF5D73; --stress-bg:#FFE6EA; --caffeine:#FFA726; --caffeine-bg:#FFF1DC;
+    --sleep:#4C7CF0; --sleep-bg:#E7EDFE; --study:#1FBF9F; --study-bg:#DEF7F1;
+    --brand:#7C5CFC; --brand-bg:#F1ECFF; --brand-dark:#5C3DE0;
+    --accent:#7C5CFC; /* <-- Added this */
+    }
+    body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+    .wrap{max-width:720px; width:100%; padding:2rem;}
+    .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
+    .progress span{color:var(--accent);}
+    h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
+    .card{background:var(--surface); border-radius:18px; padding:2rem 1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
+    .value{font-family:'Space Grotesk',sans-serif; font-size:2.4rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:1rem;}
+    input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer; box-shadow:0 2px 6px rgba(33,25,53,0.18);}
+    input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer;}
+    .scale-labels{display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); margin-top:0.5rem;}
+
+
+  
+    /* ===================================================================
+      WIDGET: everything below this line is the reusable Trends + Insights
+      module. It expects one input: an `entries` object shaped like
+      { "2026-09-14": {stress, caffeine, sleep, study}, ... }
+      =================================================================== */
+
+    /* ---- WIDGET CSS ---- */
+    .range-toggle{display:flex; gap:0.4rem; margin-bottom:1.1rem;}
+    .range-toggle button{padding:6px 14px; border-radius:20px; border:1px solid var(--hair); background:var(--surface); font-size:0.82rem; color:var(--muted); cursor:pointer; font-weight:600;}
+    .range-toggle button.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+    .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:0.8rem; margin-bottom:1.1rem;}
+    .stat{border-radius:14px; padding:1rem;}
+    .stat.stress{background:var(--stress-bg);} .stat.caffeine{background:var(--caffeine-bg);}
+    .stat.sleep{background:var(--sleep-bg);} .stat.study{background:var(--study-bg);}
+    .stat .num{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; display:block;}
+    .stat.stress .num{color:var(--stress);} .stat.caffeine .num{color:var(--caffeine);}
+    .stat.sleep .num{color:var(--sleep);} .stat.study .num{color:var(--study);}
+    .stat .lbl{font-size:0.76rem; color:var(--muted); font-weight:600;}
+
+    .overlay-toggles{display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;}
+    .toggle-chip{display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; border:1px solid var(--hair); background:var(--surface); font-size:0.82rem; font-weight:600; cursor:pointer; color:var(--muted);}
+    .toggle-chip .sw{width:9px; height:9px; border-radius:50%;}
+    .toggle-chip.on{color:var(--ink); border-color:currentColor;}
+    .next-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+    .next-btn:hover{opacity:0.92;}
+    @media(max-width:480px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+  </style>
+  </head>
+  <body>
+  <div class="wrap">
+    <h1>Trends & Insights</h1>
+    <p class="desc">You will find a graph showing the data you entered for today. For insight on how to improve, click next!</p>
+    <!-- ===== WIDGET MARKUP: Trends card (copy this block) ===== -->
+    <section class="view-active" id="view-trends">
+      <div class="card">
+        <div class="range-toggle" id="rangeToggle">
+          <button class="active" data-days="7">7 days</button>
+          <button data-days="14">14 days</button>
+          <button data-days="21">21 days</button>
+        </div>
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="overlay-toggles" id="overlayToggles">
+          <div class="toggle-chip on" data-series="sleep" style="color:var(--sleep)"><span class="sw" style="background:var(--sleep)"></span>Sleep</div>
+          <div class="toggle-chip" data-series="caffeine" style="color:var(--caffeine)"><span class="sw" style="background:var(--caffeine)"></span>Caffeine</div>
+          <div class="toggle-chip" data-series="study" style="color:var(--study)"><span class="sw" style="background:var(--study)"></span>Study</div>
+        </div>
+        <canvas id="mainChart" height="180"></canvas>
+        <button class="next-btn" id="nextBtn">Next</button>
+      </div>
+    </section>
+    <!-- ===== END WIDGET MARKUP: Trends card ===== -->
+
+    <!-- ===== WIDGET MARKUP: Insights card (copy this block) ===== -->
+    
+  </div>
+
+  <script>
+  /* ---------------- state & storage helpers ---------------- */
+  const NEXT_PAGE = 'Connections.html';
+  const params = new URLSearchParams(window.location.search);
+
+  let entries = {}; // date -> {stress, caffeine, sleep, study}
+  let chart = null;
+  let overlaySeries = { sleep:true, caffeine:false, study:false };
+  let currentRangeDays = 7;
+
+  function todayKey(){
+    return formatLocalDate(new Date());
+  }
+  function formatLocalDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function dateLabel(key){
+    const d = new Date(key+'T00:00:00');
+    return d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+  }
+  const INDEX_KEY = 'studysoothe-index';
+
+  async function getIndex(){
+    try{
+      const r = await localStorage.getItem(INDEX_KEY);
+      if(r) return JSON.parse(r);
+      return [];
+    }catch(e){
+      // key doesn't exist yet (first ever run) — that's expected, not a real error
+      return [];
+    }
+  }
+  async function setIndex(dateKeys){
+    await localStorage.setItem(INDEX_KEY, JSON.stringify(dateKeys));
+  }
+
+  async function loadAllEntries(){
+    const loaded = {};
+    try{
+      const dateKeys = await getIndex();
+      for(const dk of dateKeys){
+        try{
+          const r = await localStorage.getItem('entry:'+dk);
+          if(r) loaded[dk] = JSON.parse(r);
+        }catch(e){ /* that entry is missing/unreadable — skip it */ }
+      }
+    }catch(e){
+      console.error('Could not load entries', e);
+    }
+    entries = loaded;
+  }
+  function requireStorage(){
+    if(typeof localStorage === 'undefined'){
+      throw new Error('Storage isn\u2019t available in this environment — open this file as a Claude artifact for entries to save.');
+    }
+  }
+
+  async function saveEntry(dateKey, data){
+    // 1. Update the app's own working copy FIRST. Trends and Insights read from this
+    //    object directly, so this line alone guarantees they'll show the new entry —
+    //    regardless of whether the storage write below succeeds.
+    entries[dateKey] = data;
+
+    // 2. Try to persist it so it's still there next time the app opens. This is
+    //    best-effort: if it fails, the entry still exists for the rest of this session,
+    //    and we report the failure honestly instead of silently losing the data.
+    try{
+      requireStorage();
+      const result = await localStorage.setItem('entry:'+dateKey, JSON.stringify(data), false);
+      if(!result) throw new Error('Storage did not confirm the entry was saved.');
+      const idx = await getIndex();
+      if(!idx.includes(dateKey)){
+        idx.push(dateKey);
+        await setIndex(idx);
+      }
+      return { persisted:true };
+    }catch(e){
+      console.warn('Entry is active for this session but failed to persist:', e);
+      return { persisted:false, error:e };
+    }
+  }
+  async function deleteEntry(dateKey){
+    delete entries[dateKey];
+    try{
+      requireStorage();
+      try{ await localStorage.delete('entry:'+dateKey); }catch(e){ /* already gone, that's fine */ }
+      const idx = await getIndex();
+      await setIndex(idx.filter(k=>k!==dateKey));
+      return { persisted:true };
+    }catch(e){
+      console.warn('Entry removed for this session but failed to un-persist:', e);
+      return { persisted:false, error:e };
+    }
+  }
+
+
+  /* ---------------- today form ---------------- */
+  const stressRange = document.getElementById('stressRange');
+  const sleepRange = document.getElementById('sleepRange');
+  const studyRange = document.getElementById('studyRange');
+  const stressVal = document.getElementById('stressVal');
+  const sleepVal = document.getElementById('sleepVal');
+  const studyVal = document.getElementById('studyVal');
+  const caffeineVal = document.getElementById('caffeineVal');
+  const cupRow = document.getElementById('cupRow');
+  let caffeineCount = 0;
+
+
+  function showToast(msg, isError){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#B33A4F' : 'var(--ink)';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), isError ? 4200 : 1800);
+  }
+
+
+
+  /* ---------------- trends ---------------- */
+  document.getElementById('rangeToggle').addEventListener('click', (e)=>{
+    if(e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#rangeToggle button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentRangeDays = Number(e.target.dataset.days);
+    renderTrends();
+  });
+  document.getElementById('overlayToggles').addEventListener('click', (e)=>{
+    const chip = e.target.closest('.toggle-chip');
+    if(!chip) return;
+    const series = chip.dataset.series;
+    overlaySeries[series] = !overlaySeries[series];
+    chip.classList.toggle('on', overlaySeries[series]);
+    renderTrends();
+  });
+
+  function getRangeData(days){
+    const arr = [];
+    const d = new Date();
+    for(let i=days-1;i>=0;i--){
+      const dd = new Date(d);
+      dd.setDate(d.getDate()-i);
+      const key = formatLocalDate(dd);
+      arr.push({ date:key, ...( entries[key] || {stress:null, caffeine:null, sleep:null, study:null} ) });
+    }
+    return arr;
+  }
+  function avg(arr, field){
+    const vals = arr.map(x=>x[field]).filter(v=>v!==null && v!==undefined);
+    if(vals.length===0) return null;
+    return vals.reduce((a,b)=>a+b,0)/vals.length;
+  }
+  function fmt(n, suffix){ return n===null ? '—' : (Math.round(n*10)/10) + (suffix||''); }
+
+  function isTrendsVisible(){
+    const el = document.getElementById('view-trends');
+    return !!(el && el.classList.contains('view-active'));
+  }
+
+  function renderTrends(){
+    const data = getRangeData(currentRangeDays);
+    const statGrid = document.getElementById('statGrid');
+    statGrid.innerHTML = `
+      <div class="stat stress"><span class="num">${fmt(avg(data,'stress'))}</span><span class="lbl">avg stress</span></div>
+      <div class="stat sleep"><span class="num">${fmt(avg(data,'sleep'),'h')}</span><span class="lbl">avg sleep</span></div>
+      <div class="stat caffeine"><span class="num">${fmt(avg(data,'caffeine'))}</span><span class="lbl">avg drinks</span></div>
+      <div class="stat study"><span class="num">${fmt(avg(data,'study'),'h')}</span><span class="lbl">avg study</span></div>
+    `;
+
+    // log table — plain DOM, safe to update whether or not this tab is visible
+    const sortedKeys = Object.keys(entries).sort().reverse();
+
+    // Chart.js needs the canvas to have real dimensions to measure itself.
+    // While the Trends tab is hidden (display:none), its container is 0x0,
+    // and building/resizing a chart against a 0x0 canvas throws. So: only
+    // build the chart when this tab is actually visible; otherwise skip it —
+    // the tab-switch handler calls renderTrends() again right when it opens.
+    if(!isTrendsVisible()) return;
+
+    const labels = data.map(d=>dateLabel(d.date));
+    const datasets = [{
+      type:'line',
+      label:'Stress',
+      data:data.map(d=>d.stress),
+      borderColor:'#FF5D73',
+      backgroundColor:'#FF5D73',
+      borderRadius:6,
+      yAxisID:'y'
+    }];
+    if(overlaySeries.sleep) datasets.push({type:'line', label:'Sleep (hrs)', data:data.map(d=>d.sleep), borderColor:'#4C7CF0', backgroundColor:'#4C7CF0', tension:0.35, yAxisID:'y1', spanGaps:true});
+    if(overlaySeries.caffeine) datasets.push({type:'line', label:'Caffeine (drinks)', data:data.map(d=>d.caffeine), borderColor:'#FFA726', backgroundColor:'#FFA726', tension:0.35, yAxisID:'y1', spanGaps:true});
+    if(overlaySeries.study) datasets.push({type:'line', label:'Study (hrs)', data:data.map(d=>d.study), borderColor:'#1FBF9F', backgroundColor:'#1FBF9F', tension:0.35, yAxisID:'y1', spanGaps:true});
+
+    drawChart(labels, datasets);
+  }
+
+  // Waits up to ~3 seconds for the Chart.js library to become available,
+  // checking every 100ms. Handles the case where the CDN script is just
+  // still loading rather than genuinely missing.
+  function waitForChartLibrary(timeoutMs=3000){
+    return new Promise(resolve=>{
+      const start = Date.now();
+      (function check(){
+        if(typeof Chart !== 'undefined') return resolve(true);
+        if(Date.now()-start > timeoutMs) return resolve(false);
+        setTimeout(check, 100);
+      })();
+    });
+  }
+
+  async function drawChart(labels, datasets){
+    const ready = await waitForChartLibrary();
+    if(!ready){
+      console.error('Chart.js failed to load — check your network connection to cdnjs.cloudflare.com');
+      const canvasEl = document.getElementById('mainChart');
+      if(canvasEl){
+        canvasEl.replaceWith(Object.assign(document.createElement('div'), {
+          style:'color:var(--muted); font-size:0.85rem; padding:1rem 0;',
+          textContent:'Chart library failed to load — your stats above are still accurate, but the graph can\u2019t render right now.'
+        }));
+      }
+      return;
+    }
+    const ctx = document.getElementById('mainChart');
+    if(!ctx) return; // canvas was already replaced by the fallback message above
+    try{
+      if(chart) chart.destroy();
+      chart = new Chart(ctx.getContext('2d'), {
+        data:{ labels, datasets },
+        options:{
+          responsive:true,
+          interaction:{ mode:'index', intersect:false },
+          plugins:{ legend:{ display:false } },
+          scales:{
+            y:{ min:0, max:20, title:{display:true, text:'Stress (1–10)'} },
+            y1:{ position:'right', min:0, max:20, grid:{drawOnChartArea:false}, title:{display:true, text:'Hrs / drinks'} }
+          }
+        }
+      });
+    }catch(e){
+      console.error('Chart render failed:', e);
+    }
+  }
+  document.getElementById('nextBtn').addEventListener('click', () => {
+      window.location.href = NEXT_PAGE + '?' + params.toString();  // carry everything to the next page
+    });
+  /* ---------------- init ---------------- */
+  (async function init(){
+    await loadAllEntries();
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('stress')) {
+      const todayData = {
+        stress: Number(params.get('stress')) || 5,
+        sleep: Number(params.get('sleep')) || 0,
+        caffeine: Number(params.get('caffeine')) || 0,
+        study: Number(params.get('study')) || 0
+      };
+      await saveEntry(todayKey(), todayData);
+    }
+    renderTrends();
+  })();
+
+  </script>
+  </body>
+  </html>

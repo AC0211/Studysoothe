@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudySoothe</title> 
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#211935; --muted:#716C8C; --bg:#FAF8FF; --surface:#fff; --hair:#ECE7F7; --accent:#FF5D73; }
+  *{box-sizing:border-box;}
+  body{margin:0;   background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;display:flex; flex-direction:column;align-items: center; padding-top:2rem;}
+  .wrap{max-width:420px; width:100%; padding:2rem;}
+  .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
+  .progress span{color:var(--accent);}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
+  .card{background:var(--surface); border-radius:18px; padding:2rem 1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
+  .value{font-family:'Space Grotesk',sans-serif; font-size:2.4rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:1rem;}
+  input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer; box-shadow:0 2px 6px rgba(33,25,53,0.18);}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer;}
+  .scale-labels{display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); margin-top:0.5rem;}
+  .name-label{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;display:block;}
+  .previous-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .previous-btn:hover{opacity:0.92;}
+  .ty-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .ty-btn:hover{opacity:0.92;}
+  .ty-btn:disabled{background:var(--muted); cursor:not-allowed; opacity:0.6;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+  <div class="progress"></div>
+  <h1>Thank you for using StudySoothe! Make sure to come back tomorrow!</h1>
+  <h4 id = "welcome"></h4>
+  <div class="card">
+    <button class="previous-btn" id="previousBtn">Back</button>
+    <button class="ty-btn" id="tyBtn">Come back tomorrow!</button>
+  </div>
+  </div>
+<script>
+  // 🔧 SET THIS — the filename of the next page in your flow
+  const DONE_PAGE = 'step-1-stress.html';
+  const PREVIOUS_PAGE = 'ai_coach.html';
+  const tyBtn = document.getElementById('tyBtn');
+  const Welcome = document.getElementById('welcome');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const lastCompleted = localStorage.getItem('studysoothe_last_completed')
+  const params = new URLSearchParams(window.location.search); 
+  // Read whatever answers were already collected on earlier pages
+  // (empty here, since this is step 1 — but the pattern is the same on every page)
+  if(lastCompleted === todayStr){
+    tyBtn.disabled = true;
+    tyBtn.textContent = 'Already checked in today';
+    Welcome.textContent = "You have already completed today's check-in! Relax and come back tomorrow after 12AM UTC time!"
+  }else{
+    Welcome.textContent = "Welcome back! Ready for today's check-in?"
+  }
+  tyBtn.addEventListener('click',()=>{
+    window.location.href = DONE_PAGE + '?' + params.toString();  
+  });
+  document.getElementById('previousBtn').addEventListener('click', () => {
+    window.location.href = PREVIOUS_PAGE + '?' + params.toString();  // carry everything to the next page
+  });       
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check-in — Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#211935; --muted:#716C8C; --bg:#FAF8FF; --surface:#fff; --hair:#ECE7F7; --accent:#1FBF9F; }
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+  .wrap{max-width:420px; width:100%; padding:2rem;}
+  .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
+  .progress span{color:var(--accent);}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
+  .card{background:var(--surface); border-radius:18px; padding:2rem 1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
+  .value{font-family:'Space Grotesk',sans-serif; font-size:2.4rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:1rem;}
+  input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer; box-shadow:0 2px 6px rgba(33,25,53,0.18);}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer;}
+  .scale-labels{display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); margin-top:0.5rem;}
+  .previous-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .previous-btn:hover{opacity:0.92;}
+  .next-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .next-btn:hover{opacity:0.92;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="progress"><span>Step 3</span> of 4</div>
+  <h1>How many hours have you studied today?</h1>
+  <div class="card">
+    <div class="value" id="val">2 hrs</div>
+    <input type="range" id="studyRange" min="0" max="10" step="0.5" value="2">
+    <div class="scale-labels"><span>0 hrs</span><span>10 hrs</span></div>
+    <button class="previous-btn" id="previousBtn">Previous</button>
+    <button class="next-btn" id="nextBtn">Next</button>
+  </div>
+</div>
+
+<script>
+  const todayStr = new Date().toISOString().split('T')[0];
+  const lastCompleted = localStorage.getItem('studysoothe_last_completed');
+
+  if (lastCompleted === todayStr) {
+    window.location.href = 'Thankyou.html'; 
+  }
+  // 🔧 SET THIS — the filename of the next page in your flow
+  // (this is the LAST question, so it points to a review/summary page instead of another question)
+  const PREVIOUS_PAGE = 'step-2-sleep.html';
+  const NEXT_PAGE = 'step-4-caffeine.html';
+
+  const params = new URLSearchParams(window.location.search);
+
+  const range = document.getElementById('studyRange');
+  const valueLabel = document.getElementById('val');
+
+  if(params.has('study')) range.value = params.get('study');
+  valueLabel.textContent = range.value + ' hrs';
+
+  range.addEventListener('input', () => { valueLabel.textContent = range.value + ' hrs'; });
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    params.set('study', range.value);
+    window.location.href = NEXT_PAGE + '?' + params.toString();
+  });
+  document.getElementById('previousBtn').addEventListener('click', () => {
+    params.set('study', range.value);
+    window.location.href = PREVIOUS_PAGE + '?' + params.toString();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#FAF8FF; --surface:#fff; --ink:#211935; --muted:#716C8C; --hair:#ECE7F7;
+  --stress:#FF5D73; --stress-bg:#FFE6EA; --caffeine:#FFA726; --caffeine-bg:#FFF1DC;
+  --sleep:#4C7CF0; --sleep-bg:#E7EDFE; --study:#1FBF9F; --study-bg:#DEF7F1;
+  --brand:#7C5CFC; --brand-bg:#F1ECFF; --brand-dark:#5C3DE0;
+  --accent:#7C5CFC; /* <-- Added this */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+  .wrap{max-width:720px; width:100%; padding:2rem;}
+  .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
+  .progress span{color:var(--accent);}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
+  .card{background:var(--surface); border-radius:18px; padding:2rem 1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
+  .value{font-family:'Space Grotesk',sans-serif; font-size:2.4rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:1rem;}
+  input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer; box-shadow:0 2px 6px rgba(33,25,53,0.18);}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer;}
+  .scale-labels{display:flex; justify-content:space-between; font-size:0.75rem; color:var(--muted); margin-top:0.5rem;}
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:0.8rem; margin-bottom:1.1rem;}
+  .stat{border-radius:14px; padding:1rem;}
+  .stat.stress{background:var(--stress-bg);} .stat.caffeine{background:var(--caffeine-bg);}
+  .stat.sleep{background:var(--sleep-bg);} .stat.study{background:var(--study-bg);}
+  .stat .num{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; display:block;}
+  .stat.stress .num{color:var(--stress);} .stat.caffeine .num{color:var(--caffeine);}
+  .stat.sleep .num{color:var(--sleep);} .stat.study .num{color:var(--study);}
+  .stat .lbl{font-size:0.76rem; color:var(--muted); font-weight:600;}
+  .previous-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .previous-btn:hover{opacity:0.92;}
+  .next-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .next-btn:hover{opacity:0.92;}
+  /* ===================================================================
+     WIDGET: colored range slider with live value + a color variant
+     Reuse this block: the CSS under "WIDGET CSS" + the HTML under
+     "WIDGET MARKUP" + the JS under "WIDGET JS".
+     Swap --slider-color to re-theme it for any metric.
+     =================================================================== */
+
+  /* ---- WIDGET CSS ---- */
+  .field{ --slider-color:#5cfca9; }
+  .field-top{display:flex; align-items:baseline;   justify-content:space-between; margin-bottom:0.6rem;}
+  .field-top label{font-weight:600; font-size:0.95rem;}
+  .field-value{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.2rem; color:var(--slider-color);}
+  input[type=range].pulse-slider{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:8px; border-radius:6px; outline:none;
+    background:var(--hair);
+  }
+  input[type=range].pulse-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:24px; height:24px; border-radius:50%;
+    background:#fff; border:5px solid var(--slider-color); cursor:pointer;
+    box-shadow:0 2px 6px rgba(33,25,53,0.18);
+  }
+  input[type=range].pulse-slider::-moz-range-thumb{
+    width:24px; height:24px; border-radius:50%; border:5px solid var(--slider-color);
+    background:#fff; cursor:pointer;
+  }
+  .empty{text-align:center; padding:2rem 1rem; color:var(--muted);}
+  .ai-btn{width:100%; margin-top:1.8rem; padding:0.95rem; border:none; border-radius:14px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+  .ai-btn:hover{opacity:0.92;}
+  .ai-btn:disabled{opacity:0.6; cursor:default;}
+  .spinner{width:15px; height:15px; border-radius:50%; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .ai-result{margin-top:1.2rem; display:flex; flex-direction:column; gap:0.9rem;}
+  .ai-line{display:flex; gap:0.8rem; align-items:flex-start; background:var(--brand-bg); border-radius:14px; padding:1rem 1.1rem;}
+  .ai-line .tag{font-size:0.72rem; font-weight:700; color:var(--brand-dark); text-transform:none; min-width:82px;}
+  .ai-line p{margin:0; font-size:0.92rem; line-height:1.5;}
+  .ai-error{color:var(--stress); font-size:0.88rem; margin-top:0.8rem;}
+  .support-note{font-size:0.8rem; color:var(--muted); margin-top:1rem; line-height:1.5; border-top:1px solid var(--hair); padding-top:0.9rem;}
+
+  footer.settings{text-align:center; padding:2rem 0 1rem; }
+  footer.settings button{background:none; border:none; color:var(--muted); font-size:0.8rem; text-decoration:underline; cursor:pointer;}
+
+  @media(max-width:640px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    table.log{font-size:0.78rem;}
+  }
+</style>
+</head>
+<body>
+<main>
+<div class = "wrap">
+  <section class="view" id="view-insights">
+        <div class="card">
+          <h2>AI coach summary</h2>
+          <p class="hint">A short, personal read on your last 7 days, generated from your own numbers. Click Generate this week's insight for your report.</p>
+          <button class="ai-btn" id="aiBtn"><span id="aiBtnLabel">Generate this week's insight</span></button>
+          <div id="aiResult"></div>
+          <button class="previous-btn" id="previousBtn">Previous  </button>
+          <button class="next-btn" id="nextBtn"> Next </button>
+          <div class="support-note">This is a supportive summary, not medical advice. If stress has been consistently high or hard to manage, it's worth talking to a school counselor, doctor, or another adult you trust — or contacting the 988 Suicide & Crisis Lifeline (call or text 988 in the US) if things ever feel like too much.</div>
+        </div>
+      </section>
+      <footer class="settings">
+          <button id="resetBtn">Clear all my entries</button>
+      </footer>
+    </main>
+</div>
+<script>
+const PREVIOUS_PAGE = 'Connections.html';
+const NEXT_PAGE = 'Thankyou.html';
+const RESET_PAGE = 'StudySoothe.html'
+const params = new URLSearchParams(window.location.search);
+let entries = {};
+
+document.getElementById('previousBtn').addEventListener('click', () => {
+    window.location.href = PREVIOUS_PAGE + '?' + params.toString();
+  }); 
+document.getElementById('nextBtn').addEventListener('click', () => {
+    window.location.href = NEXT_PAGE + '?' + params.toString();
+  }); 
+
+/* ---------------- AI coach summary ---------------- */
+document.getElementById('aiBtn').addEventListener('click', generateAISummary);
+
+async function generateAISummary(){
+  const btn = document.getElementById('aiBtn');
+  const label = document.getElementById('aiBtnLabel');
+  const resultBox = document.getElementById('aiResult');
+  console.log("Current entries in memory:", entries);
+  console.log("Last 7 days filtered data:", getRangeData(7).filter(d=>d.stress!==null));
+  const last7 = getRangeData(7).filter(d=>d.stress!==null);
+  if(last7.length < 2){
+    resultBox.innerHTML = `<div class="ai-error">Log at least 2 days this week before generating an insight.</div>`;
+    return;
+  }
+  btn.disabled = true;
+  label.innerHTML = `<span class="spinner"></span> Thinking...`;
+  resultBox.innerHTML = '';
+
+  const dataLines = last7.map(d=>`- ${d.date}: stress ${d.stress}/10, sleep ${d.sleep}h, caffeine ${d.caffeine} drinks, study ${d.study}h${d.mood?(', mood: '+d.mood):''}`).join('\n');
+  const prompt = `You are a warm, concise wellness coach inside a student stress-journal app. Base everything only on the data below, for one specific student's own week. Do not diagnose, do not use clinical language, do not moralize.
+
+Data (most recent days first is not required, just use as given):
+${dataLines}
+
+Return ONLY a raw JSON object (no markdown fences, no extra text) with exactly these keys:
+"observation": one sentence connecting two of this student's own logged numbers this week,
+"suggestion": one small, specific, doable suggestion for next week based on the data,
+"note": one short, warm, normalizing sentence about stress — no diagnosis, no clinical terms.
+Keep the whole thing under 70 words total.`;
+
+  try{
+    const response = await fetch("http://localhost:11434/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3.2",
+        messages: [{ role: "user", content: prompt }],
+        stream: false,
+        format: "json"
+      })
+    });
+    const responseData = await response.json();
+    const text = responseData.message.content.trim();
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    resultBox.innerHTML = `
+      <div class="ai-result">
+        <div class="ai-line"><div class="tag">OBSERVED</div><p>${parsed.observation}</p></div>
+        <div class="ai-line"><div class="tag">TRY THIS</div><p>${parsed.suggestion}</p></div>
+        <div class="ai-line"><div class="tag">REMEMBER</div><p>${parsed.note}</p></div>
+      </div>
+    `;
+  }catch(e){
+    console.warn("Ollama is offline. Generating dynamic offline insight from user data.");
+    
+    // Get the real last 7 days of data from the app
+    const last7 = getRangeData(7).filter(d => d.stress !== null);
+    
+    // Calculate simple averages from their actual entries
+    let avgStress = 5;
+    let avgSleep = 7;
+    if (last7.length > 0) {
+      avgStress = (last7.reduce((sum, d) => sum + d.stress, 0) / last7.length).toFixed(1);
+      avgSleep = (last7.reduce((sum, d) => sum + d.sleep, 0) / last7.length).toFixed(1);
+    }
+
+    // Build a dynamic message using their real stats!
+    const parsed = {
+      observation: `Looking at your last ${last7.length} logged days, your average stress was ${avgStress}/10 and your sleep averaged ${avgSleep} hours.`,
+      suggestion: avgStress >= 6 
+        ? "Since your stress has been running a bit high, try adding a 5-minute breathing break between your study blocks." 
+        : "Your stress levels look well-balanced! Keep maintaining your current study and rest routine.",
+      note: "Remember that tracking your habits is a powerful tool for self-care — you're doing great!"
+    };
+
+    resultBox.innerHTML = `
+      <div class="ai-result">
+        <div class="ai-line"><div class="tag">OBSERVED</div><p>${parsed.observation}</p></div>
+        <div class="ai-line"><div class="tag">TRY THIS</div><p>${parsed.suggestion}</p></div>
+        <div class="ai-line"><div class="tag">REMEMBER</div><p>${parsed.note}</p></div>
+      </div>
+    `;
+  }finally{
+    btn.disabled = false;
+    label.textContent = 'Generate this week\u2019s insight';
+  }
+}
+function todayKey(){
+  return formatLocalDate(new Date());
+}
+function formatLocalDate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function dateLabel(key){
+  const d = new Date(key+'T00:00:00');
+  return d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+}
+const INDEX_KEY = 'studysoothe-index';
+
+async function getIndex(){
+  try{
+    const r = await localStorage.getItem(INDEX_KEY);
+    if(r) return JSON.parse(r);
+    return [];
+  }catch(e){
+    // key doesn't exist yet (first ever run) — that's expected, not a real error
+    return [];
+  }
+}
+async function setIndex(dateKeys){
+  await localStorage.setItem(INDEX_KEY, JSON.stringify(dateKeys));
+}
+
+async function loadAllEntries(){
+  const loaded = {};
+  try{
+    const dateKeys = await getIndex();
+    for(const dk of dateKeys){
+      try{
+        const r = await localStorage.getItem('entry:'+dk);
+        if(r) loaded[dk] = JSON.parse(r);
+      }catch(e){ /* that entry is missing/unreadable — skip it */ }
+    }
+  }catch(e){
+    console.error('Could not load entries', e);
+  }
+  entries = loaded;
+}
+function requireStorage(){
+  if(typeof localStorage === 'undefined'){
+    throw new Error('Storage isn\u2019t available in this environment — open this file as a Claude artifact for entries to save.');
+  }
+}
+
+async function saveEntry(dateKey, data){
+  entries[dateKey] = data;
+
+  try{
+    requireStorage();
+    localStorage.setItem('entry:'+dateKey, JSON.stringify(data)); // Just call it directly
+    const idx = await getIndex();
+    if(!idx.includes(dateKey)){
+      idx.push(dateKey);
+      setIndex(idx);
+    }
+    return { persisted:true };
+  }catch(e){
+    console.warn('Entry is active for this session but failed to persist:', e);
+    return { persisted:false, error:e };
+  }
+}
+async function deleteEntry(dateKey){
+  delete entries[dateKey];
+  try{
+    requireStorage();
+    try{ await localStorage.removeItem('entry:'+dateKey); }catch(e){ /* already gone, that's fine */ }
+    const idx = await getIndex();
+    await setIndex(idx.filter(k=>k!==dateKey));
+    return { persisted:true };
+  }catch(e){
+    console.warn('Entry removed for this session but failed to un-persist:', e);
+    return { persisted:false, error:e };
+  }
+}
+function getRangeData(days){
+  const arr = [];
+  const d = new Date();
+  for(let i=days-1;i>=0;i--){
+    const dd = new Date(d);
+    dd.setDate(d.getDate()-i);
+    const key = formatLocalDate(dd);
+    arr.push({ date:key, ...( entries[key] || {stress:null, caffeine:null, sleep:null, study:null} ) });
+  }
+  return arr;
+}
+async function init(){
+  const keyToday = todayKey();
+  if (params.has('stress')) {
+    const todayData = {
+      stress: Number(params.get('stress')) || 5,
+      sleep: Number(params.get('sleep')) || 0,
+      caffeine: Number(params.get('caffeine')) || 0,
+      study: Number(params.get('study')) || 0
+    };
+    await saveEntry(keyToday, todayData);
+  }
+  await loadAllEntries();
+  console.log("Entries successfully populated:", entries);
+}
+init();
+/* ---------------- reset ---------------- */
+document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(!confirm('This will permanently delete every entry you’ve logged. Continue?')) return;
+  
+  const keys = Object.keys(entries);
+  for(const k of keys){ await deleteEntry(k); }
+  
+  // 🔑 ADD THIS LINE: This clears the daily submission lock so you can test again!
+  localStorage.removeItem('studysoothe_last_completed');
+
+  document.getElementById('aiResult').innerHTML = '';
+  alert('All entries cleared and daily lock reset.');
+  
+  // Optional: Refresh the page so everything resets cleanly
+  window.location.href = RESET_PAGE;
+});
+</script>
+</body>
+</html>

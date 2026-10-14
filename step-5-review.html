@@ -1,0 +1,85 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check-in — Review</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{ --ink:#211935; --muted:#716C8C; --bg:#FAF8FF; --surface:#fff; --hair:#ECE7F7; --brand:#7C5CFC;
+      --stress:#FF5D73; --caffeine:#FFA726; --sleep:#4C7CF0; --study:#1FBF9F; }
+    *{box-sizing:border-box;}
+    body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;}
+    .wrap{max-width:420px; width:100%; padding:2rem;}
+    h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 1.6rem 0;}
+    .card{background:var(--surface); border-radius:18px; padding:1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
+    .row{display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0; border-bottom:1px solid var(--hair);}
+    .row:last-of-type{border-bottom:none;}
+    .row .label{font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:8px;}
+    .row .dot{width:9px; height:9px; border-radius:50%;}
+    .row .num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.05rem;}
+    .previous-btn{width:100%; margin-top:1.6rem; padding:0.95rem; border:none; border-radius:14px; background:var(--brand); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+    .previous-btn:hover{opacity:0.92;}
+    .save-btn{width:100%; margin-top:1.6rem; padding:0.95rem; border:none; border-radius:14px; background:var(--brand); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+    .save-btn:hover{opacity:0.92;}
+    .next-btn{width:100%; margin-top:1.6rem; padding:0.95rem; border:none; border-radius:14px; background:var(--brand); color:#fff; font-weight:700; font-size:1rem; cursor:pointer;}
+    .next-btn:hover{opacity:0.92;}
+    .note{font-size:0.78rem; color:var(--muted); margin-top:1rem; line-height:1.5;}
+  </style>
+  </head>
+  <body>
+  <div class="wrap">
+    <h1>Review today's check-in</h1>
+    <div class="card">
+      <div class="row"><span class="label"><span class="dot" style="background:var(--stress)"></span>Stress</span><span class="num" id="outStress">—</span></div>
+      <div class="row"><span class="label"><span class="dot" style="background:var(--caffeine)"></span>Caffeine</span><span class="num" id="outCaffeine">—</span></div>
+      <div class="row"><span class="label"><span class="dot" style="background:var(--sleep)"></span>Sleep</span><span class="num" id="outSleep">—</span></div>
+      <div class="row"><span class="label"><span class="dot" style="background:var(--study)"></span>Study</span><span class="num" id="outStudy">—</span></div>
+      <button class="previous-btn" id="previousBtn">Back</button>
+      <button class="save-btn" id="saveBtn" >Save entry</button>
+      <button class="next-btn" id="nextBtn" disabled>Next</button>
+    </div>
+  </div>
+  <script>
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastCompleted = localStorage.getItem('studysoothe_last_completed');
+
+    if (lastCompleted === todayStr) {
+      window.location.href = 'Thankyou.html'; 
+    }
+
+    const PREVIOUS_PAGE = 'step-4-caffeine.html';
+    const NEXT_PAGE = 'Stats.html';
+    const params = new URLSearchParams(window.location.search);
+
+    // Everything collected across all 4 previous pages is available right here:
+    const answers = {
+      stress: Number(params.get('stress')),
+      caffeine: Number(params.get('caffeine')),
+      sleep: Number(params.get('sleep')),
+      study: Number(params.get('study'))
+    };
+
+    document.getElementById('outStress').textContent = answers.stress + '/10';
+    document.getElementById('outCaffeine').textContent = answers.caffeine + (answers.caffeine===1 ? ' drink' : ' drinks');
+    document.getElementById('outSleep').textContent = answers.sleep + ' hrs';
+    document.getElementById('outStudy').textContent = answers.study + ' hrs';
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      // Set the daily lock in localStorage
+      localStorage.setItem('studysoothe_last_completed', todayStr);
+
+      // Disable Save, Enable Next (your Trends logic)
+      document.getElementById("saveBtn").disabled = true;
+      document.getElementById("saveBtn").textContent = "Saved!";
+      document.getElementById("nextBtn").disabled = false;
+    });
+    document.getElementById('previousBtn').addEventListener('click', () => {       // record this page's answer
+      window.location.href = PREVIOUS_PAGE + '?' + params.toString();  // carry everything to the next page
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {       // record this page's answer
+      window.location.href = NEXT_PAGE + '?' + params.toString();  // carry everything to the next page
+    });
+  </script>
+  </body>
+  </html>
