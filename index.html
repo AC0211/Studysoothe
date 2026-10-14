@@ -29,7 +29,7 @@
 
   input[type="text"]:focus {
     border-color: var(--accent);
-  }  
+  }
   input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer; box-shadow:0 2px 6px rgba(33,25,53,0.18);}
   input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:5px solid var(--accent); cursor:pointer;}
@@ -62,16 +62,20 @@
         document.getElementById("welcome").innerText = "Please enter your name before continuing!"
         return
       }
+      localStorage.setItem('studysoothe_name',userName);
       document.getElementById("welcome").innerText = "Welcome "+ userName +"! "+"We hope to produce accurate statistics to address what issues you are facing and how you can improve that! " + "We just require a few answers from you in order for us to provide the necessary information! Click the next button, " +userName + "!"
       document.getElementById("Howdy").disabled = true;
       document.getElementById("nextBtn").disabled = false
     }
   </script>
 <script>
+  const savedName = localStorage.getItem('studysoothe_name');
+
+  // If they already registered their name before, skip index.html and send them straight to the Thankyou hub!
   const todayStr = new Date().toISOString().split('T')[0];
   const lastCompleted = localStorage.getItem('studysoothe_last_completed');
 
-  if (lastCompleted === todayStr) {
+  if (savedName||lastCompleted === todayStr) {
     // User already checked in today — block them from re-entering inputs
     window.location.href = 'Thankyou.html'; 
   }
@@ -86,6 +90,7 @@
 
 
   document.getElementById('nextBtn').addEventListener('click', () => {
+    params.set('name', localStorage.getItem('studysoothe_name'));
     window.location.href = NEXT_PAGE + '?' + params.toString();  // carry everything to the next page
   });
 </script>
