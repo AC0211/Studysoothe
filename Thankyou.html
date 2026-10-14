@@ -18,7 +18,7 @@
   .wrap{max-width:420px; width:100%; padding:2rem;}
   .progress{font-size:0.8rem; color:var(--muted); font-weight:600; margin-bottom:0.6rem;}
   .progress span{color:var(--accent);}
-  h1{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:1.5rem; margin:0 0 2rem 0;}
   .card{background:var(--surface); border-radius:18px; padding:2rem 1.8rem; box-shadow:0 8px 28px rgba(33,25,53,0.07);}
   .value{font-family:'Space Grotesk',sans-serif; font-size:2.4rem; font-weight:700; color:var(--accent); text-align:center; margin-bottom:1rem;}
   input[type=range]{-webkit-appearance:none; width:100%; height:8px; border-radius:6px; background:var(--hair); outline:none;}
@@ -36,7 +36,6 @@
 <body>
   <div class="wrap">
   <div class="progress"></div>
-  <h1>Thank you for using StudySoothe! Make sure to come back tomorrow!</h1>
   <h4 id = "welcome"></h4>
   <div class="card">
     <button class="previous-btn" id="previousBtn">Back</button>
@@ -52,6 +51,8 @@
   const todayStr = new Date().toISOString().split('T')[0];
   const lastCompleted = localStorage.getItem('studysoothe_last_completed')
   const params = new URLSearchParams(window.location.search); 
+  const savedName = localStorage.getItem('studysoothe_name');
+  const nameDisplay = savedName;
   // Read whatever answers were already collected on earlier pages
   // (empty here, since this is step 1 — but the pattern is the same on every page)
   if(lastCompleted === todayStr){
@@ -61,7 +62,7 @@
   }else{
     tyBtn.disabled = false;
     tyBtn.textContent = "Start today's check-in";
-    Welcome.textContent = "Welcome back! Ready for today's check-in?"
+    Welcome.textContent = "Welcome back "+ nameDisplay +"! Ready for today's check-in?"
   }
   tyBtn.addEventListener('click',()=>{
     window.location.href = DONE_PAGE + '?' + params.toString();  
