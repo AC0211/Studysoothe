@@ -48,8 +48,9 @@
   const PREVIOUS_PAGE = 'ai_coach.html';
   const tyBtn = document.getElementById('tyBtn');
   const Welcome = document.getElementById('welcome');
-  const todayStr = new Date().toISOString().split('T')[0];
-  const lastCompleted = localStorage.getItem('studysoothe_last_completed')
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;  
+  const lastCompleted = localStorage.getItem('studysoothe_last_completed');
   const params = new URLSearchParams(window.location.search); 
   const savedName = localStorage.getItem('studysoothe_name');
   const nameDisplay = savedName;
@@ -58,7 +59,7 @@
   if(lastCompleted === todayStr){
     tyBtn.disabled = true;
     tyBtn.textContent = 'Already checked in today';
-    Welcome.textContent = "You have already completed today's check-in! Relax and come back tomorrow after 12AM UTC time!"
+    Welcome.textContent = "You have already completed today's check-in! Relax and come back tomorrow after 12AM local time!"
   }else{
     tyBtn.disabled = false;
     tyBtn.textContent = "Start today's check-in";
