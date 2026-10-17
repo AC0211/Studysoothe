@@ -278,8 +278,10 @@
       data:data.map(d=>d.stress),
       borderColor:'#FF5D73',
       backgroundColor:'#FF5D73',
+      tension:0.35,
       borderRadius:6,
-      yAxisID:'y'
+      yAxisID:'y',
+      spanGaps:true
     }];
     if(overlaySeries.sleep) datasets.push({type:'line', label:'Sleep (hrs)', data:data.map(d=>d.sleep), borderColor:'#4C7CF0', backgroundColor:'#4C7CF0', tension:0.35, yAxisID:'y1', spanGaps:true});
     if(overlaySeries.caffeine) datasets.push({type:'line', label:'Caffeine (drinks)', data:data.map(d=>d.caffeine), borderColor:'#FFA726', backgroundColor:'#FFA726', tension:0.35, yAxisID:'y1', spanGaps:true});
