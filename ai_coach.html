@@ -135,26 +135,32 @@ async function generateAISummary(){
   const btn = document.getElementById('aiBtn');
   const label = document.getElementById('aiBtnLabel');
   const resultBox = document.getElementById('aiResult');
+  
   console.log("Current entries in memory:", entries);
-  console.log("Last 7 days filtered data:", getRangeData(7).filter(d=>d.stress!==null));
   const last7 = getRangeData(7).filter(d=>d.stress!==null);
+  
   if(last7.length < 2){
     resultBox.innerHTML = `<div class="ai-error">Log at least 2 days this week before generating an insight.</div>`;
     return;
   }
+  
   btn.disabled = true;
   label.innerHTML = `<span class="spinner"></span> Thinking...`;
   resultBox.innerHTML = '';
 
   const dataLines = last7.map(d=>`- ${d.date}: stress ${d.stress}/10, sleep ${d.sleep}h, caffeine ${d.caffeine} drinks, study ${d.study}h${d.mood?(', mood: '+d.mood):''}`).join('\n');
-  const prompt = `You are a warm, concise wellness coach inside a student stress-journal app. Base everything only on the data below, for one specific student's own week. Do not diagnose, do not use clinical language, do not moralize.
+  
+  // 🔑 Updated prompt to instruct Ollama to find the cause and tailor the suggestion
+  const prompt = `You are a warm, concise wellness coach inside a student stress-journal app. Base everything only on runtime student data below. Do not diagnose, do not use clinical language, do not moralize.
 
-Data (most recent days first is not required, just use as given):
+Data:
 ${dataLines}
 
-Return ONLY a raw JSON object (no markdown fences, no extra text) with exactly these keys:
-"observation": one sentence connecting two of this student's own logged numbers this week,
-"suggestion": one small, specific, doable suggestion for next week based on the data,
+Instructions:
+1. Identify the primary lifestyle factor causing their stress (e.g., sleep under 6h, heavy study over 6h, or high caffeine).
+2. Return ONLY a raw JSON object (no markdown fences, no extra text) with exactly these keys:
+"observation": one sentence connecting their stress level to their sleep, study, or caffeine numbers,
+"suggestion": one specific, actionable tip addressing that exact cause (e.g., wind down earlier for sleep, break up study sessions),
 "note": one short, warm, normalizing sentence about stress — no diagnosis, no clinical terms.
 Keep the whole thing under 70 words total.`;
 
@@ -182,28 +188,83 @@ Keep the whole thing under 70 words total.`;
       </div>
     `;
   }catch(e){
-    console.warn("Ollama is offline. Generating dynamic offline insight from user data.");
+    console.warn("Ollama is offline. Generating dynamic offline insight from user data with root-cause analysis.");
     
-    // Get the real last 7 days of data from the app
-    const last7 = getRangeData(7).filter(d => d.stress !== null);
-    
-    // Calculate simple averages from their actual entries
     let avgStress = 5;
     let avgSleep = 7;
+    let avgStudy = 3;
+    let avgCaff = 0;
+
     if (last7.length > 0) {
       avgStress = (last7.reduce((sum, d) => sum + d.stress, 0) / last7.length).toFixed(1);
       avgSleep = (last7.reduce((sum, d) => sum + d.sleep, 0) / last7.length).toFixed(1);
+      avgStudy = (last7.reduce((sum, d) => sum + d.study, 0) / last7.length).toFixed(1);
+      avgCaff = (last7.reduce((sum, d) => sum + d.caffeine, 0) / last7.length).toFixed(1);
     }
 
-    // Build a dynamic message using their real stats!
-    const parsed = {
-      observation: `Looking at your last ${last7.length} logged days, your average stress was ${avgStress}/10 and your sleep averaged ${avgSleep} hours.`,
-      suggestion: avgStress >= 6 
-        ? "Since your stress has been running a bit high, try adding a 5-minute breathing break between your study blocks." 
-        : "Your stress levels look well-balanced! Keep maintaining your current study and rest routine.",
-      note: "Remember that tracking your habits is a powerful tool for self-care — you're doing great!"
-    };
+// 1. Gather ALL contributing factors for the "REMEMBER" note
+    let contributingFactors = [];
+    if (avgSleep < 6) {
+      contributingFactors.push("low sleep");
+    }
+    if (avgStudy > 6) {
+      contributingFactors.push("heavy study hours");
+    }
+    if (avgCaff > 3) {
+      contributingFactors.push("high caffeine intake");
+    }
+    if (avgStress >= 7) {
+      contributingFactors.push("elevated stress levels");
+    }
 
+    // Format them nicely into a sentence list (e.g., "low sleep, heavy study hours, and high caffeine intake")
+    let causeText = "your daily routine";
+    if (contributingFactors.length === 1) {
+      causeText = contributingFactors[0];
+    } else if (contributingFactors.length > 1) {
+      const lastFactor = contributingFactors.pop();
+      causeText = contributingFactors.join(", ") + " and " + lastFactor;
+    }
+
+    // 2. Establish the Stress Foundation for the suggestion
+    let stressMessage = "";
+    if (avgStress >= 7) {
+      stressMessage = "Your stress levels are running high right now.";
+    } else if (avgStress >= 4) {
+      stressMessage = "Your stress is currently at a moderate level.";
+    } else {
+      stressMessage = "Your stress levels look well-balanced!";
+    }
+
+    // 3. Gather Habit Remedies
+    let habitRemedies = [];
+    if (avgSleep < 6) {
+      habitRemedies.push(`With sleep averaging ${avgSleep}h, try setting a strict bedtime routine.`);
+    } 
+    if (avgStudy > 6) {
+      habitRemedies.push(`To balance ${avgStudy}h of daily study time, break sessions apart using 10-minute resets.`);
+    } 
+    if (avgCaff > 3) {
+      habitRemedies.push(`Consider lowering your caffeine intake from ${avgCaff} drinks to help settle your focus.`);
+    }
+
+    // 4. Combine Stress + Habit Advice
+    let suggestionText = "";
+    if (habitRemedies.length > 0) {
+      suggestionText = `${stressMessage} ${habitRemedies.join(" ")}`;
+    } else if (avgStress >= 7) {
+      suggestionText = `${stressMessage} Consider taking a full evening off from studying to recharge and talk things through.`;
+    } else if (avgStress >= 4) {
+      suggestionText = `${stressMessage} Try incorporating a short walk or breathing break between tasks to prevent build-up.`;
+    } else {
+      suggestionText = `${stressMessage} Keep maintaining your current study and rest routine!`;
+    }
+
+    const parsed = {
+      observation: `Looking at your last ${last7.length} logged days, your average stress was ${avgStress}/10, sleep averaged ${avgSleep}h, study averaged ${avgStudy}h, and caffeine averaged ${avgCaff} drinks.`,
+      suggestion: suggestionText,
+      note: `Notice how factors like ${causeText} influenced your week. Tracking these habits gives you the power to adjust as you go!`
+    };
     resultBox.innerHTML = `
       <div class="ai-result">
         <div class="ai-line"><div class="tag">OBSERVED</div><p>${parsed.observation}</p></div>
