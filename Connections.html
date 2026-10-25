@@ -151,6 +151,13 @@ function renderConnections(){
     </div>
   `).join('');
 }
+document.getElementById('nextBtn').addEventListener('click', () => {
+  window.location.href = NEXT_PAGE + '?' + params.toString();
+});
+
+document.getElementById('previousBtn').addEventListener('click', () => {
+  window.location.href = PREVIOUS_PAGE + '?' + params.toString();
+});
 function todayKey(){
   return formatLocalDate(new Date());
 }
