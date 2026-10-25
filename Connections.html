@@ -105,22 +105,40 @@ function renderConnections(){
   const aStress = avg(all,'stress'), aSleep = avg(all,'sleep'), aCaff = avg(all,'caffeine'), aStudy = avg(all,'study');
   const lines = [];
 
-  function checkFactor(field, direction, label, color){
-    const subset = all.filter(e => direction==='low' ? e[field] < (field==='sleep'? aSleep : (field==='caffeine'?aCaff:aStudy)) : e[field] > (field==='sleep'? aSleep : (field==='caffeine'?aCaff:aStudy)));
-    if(subset.length < 2) return;
-    const highStress = subset.filter(e=>e.stress > aStress);
-    const ratio = highStress.length / subset.length;
-    if(ratio >= 0.6){
+  // Direct high-stress days evaluation
+  const highStressDays = all.filter(e => e.stress > aStress);
+
+  if (highStressDays.length > 0) {
+    // Check Sleep
+    const lowSleepCount = highStressDays.filter(e => e.sleep < aSleep).length;
+    if (lowSleepCount > 0) {
       lines.push({
-        color,
-        text: `Stress was above your average on ${highStress.length} of the ${subset.length} days you had ${label}.`,
+        color: 'var(--sleep)',
+        text: `Stress was above your average on ${lowSleepCount} of the ${highStressDays.length} days you had below-average sleep.`,
+        sub: `Personal average stress: ${fmt(aStress)}/10`
+      });
+    }
+
+    // Check Caffeine
+    const highCaffCount = highStressDays.filter(e => e.caffeine > aCaff).length;
+    if (highCaffCount > 0) {
+      lines.push({
+        color: 'var(--caffeine)',
+        text: `Stress was above your average on ${highCaffCount} of the ${highStressDays.length} days you had above-average caffeine.`,
+        sub: `Personal average stress: ${fmt(aStress)}/10`
+      });
+    }
+
+    // Check Study
+    const highStudyCount = highStressDays.filter(e => e.study > aStudy).length;
+    if (highStudyCount > 0) {
+      lines.push({
+        color: 'var(--study)',
+        text: `Stress was above your average on ${highStudyCount} of the ${highStressDays.length} days you had above-average study hours.`,
         sub: `Personal average stress: ${fmt(aStress)}/10`
       });
     }
   }
-  checkFactor('sleep','low','below-average sleep','var(--sleep)');
-  checkFactor('caffeine','high','above-average caffeine','var(--caffeine)');
-  checkFactor('study','high','above-average study hours','var(--study)');
 
   if(lines.length===0){
     box.innerHTML = `<div class="empty">No strong single-factor pattern yet — your stress looks fairly steady across your logged days. Keep logging to sharpen this.</div>`;
@@ -133,13 +151,7 @@ function renderConnections(){
     </div>
   `).join('');
 }
-document.getElementById('nextBtn').addEventListener('click', () => {
-    window.location.href = NEXT_PAGE + '?' + params.toString();  // carry everything to the next page
-  });
-document.getElementById('previousBtn').addEventListener('click', () => {
-    window.location.href = PREVIOUS_PAGE + '?' + params.toString();  // carry everything to the next page
-  });
-  function todayKey(){
+function todayKey(){
   return formatLocalDate(new Date());
 }
 function formatLocalDate(d){
